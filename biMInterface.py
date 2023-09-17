@@ -17,6 +17,10 @@ class MainFrame(tk.Frame):
     self.panel = Panel(self)
     self.panel.grid(row=0, column=0)
 
+    # BUTTON
+    self.button = tk.Button(self, command=tkParent.analyze)
+    self.button.grid(row=1, column=0)
+
     # CANVAS
     self.canvas = tk.Canvas(self, width=300, height=300, background="black", scrollregion=(0, 0, 1000, 1000))
     self.canvas.grid(row=0, column=1, sticky=("N","E","S","W"))
@@ -57,10 +61,10 @@ class MainFrame(tk.Frame):
     self.canvas.bind("<B1-Motion>", lambda event: self.canvas.scan_dragto(event.x, event.y, gain=1))
 
 class BiMInterface(tk.Tk):
-    def __init__(self):
+    def __init__(self, g):
         super().__init__()
         self.title('BiM')
-
+        self.g = g
 
         # initialize the main frame
         self.mainFrame = MainFrame(self)
@@ -76,26 +80,37 @@ class BiMInterface(tk.Tk):
     def clearCanvas(self):
         self.mainFrame.canvas.delete("all")
 
-    def loadGrapg(self, g):
+    def loadGraph(self, g):
         pass
     
-    def drawGraph(self, g: Bigraph):
+    def drawGraph(self):
         # reserve space for the graph
         
         # paint the graph x:(0-300)
         x0 = 0 + 50
         y0 = 0 + 50
         x1 = 300 - 50
-        y1 = 50 * max(len(g.left), len(g.right))
         
-        # print left side
-        for y in range(y0):
-            pass
+        x = x0
+        y = y0
+        # print left side vertices
+        for vertex in self.g.left:
+            self.mainFrame.canvas.create_oval(x - 10, y - 10, x + 10, y + 10, fill="orange")
+            self.mainFrame.canvas.create_text(x, y, text=vertex)
+            y += 50
 
-        # print right side
+        x = x1
+        y = y0
+        # print right side vertices
+        for vertex in self.g.right:
+            self.mainFrame.canvas.create_oval(x-10, y-10, x+10, y+10, fill="blue")
+            self.mainFrame.canvas.create_text(x, y, text=vertex)
+            y += 50
 
-    def analyze(self, g):
-        self.drawGraph(g)
+        # print edges
+
+    def analyze(self):
+        self.drawGraph()
 
 
 if __name__ == "__main__":

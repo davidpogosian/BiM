@@ -18,8 +18,7 @@ def main():
     )
 
     logging.basicConfig(encoding='utf-8', level=logging.DEBUG, format="%(message)s")
-    interface = BiMInterface()
-    interface.analyze(g)
+    interface = BiMInterface(g)
 
 
 if __name__ == "__main__":
