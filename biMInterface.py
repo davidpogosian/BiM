@@ -24,7 +24,7 @@ class MainFrame(tk.Frame):
     self.button.grid(row=1, column=0)
 
     # CANVAS
-    self.canvas = tk.Canvas(self, width=300, height=300, background="black", scrollregion=(0, 0, 1000, 1000))
+    self.canvas = tk.Canvas(self, width=300, height=300, background="black")
     self.canvas.grid(row=0, column=1, sticky=("N","E","S","W"))
 
     # scrollbars for canvas
@@ -38,9 +38,8 @@ class MainFrame(tk.Frame):
 
 
     # TEMP
-    print(self.canvas.create_line(0, 0, 300, 300, fill="green", width=10))
-    print(self.canvas.create_line(0, 100, 300, 300, fill="red", width=10))
-    self["bg"] = "blue"
+    self["bg"] = "black"
+    self.canvas.create_oval(-10, -10, 10, 10, fill="green")
 
     # smallest scrollable region that contains everything on the canvas
     #self.canvas.configure(scrollregion = self.canvas.bbox("all"))
@@ -49,22 +48,8 @@ class MainFrame(tk.Frame):
     self.columnconfigure(1, weight=1)
     self.rowconfigure(0, weight=1)
 
-    # PANNING & ZOOMING HAS STRANGE EFFECTS
-    # panning & zooming
-    def do_zoom(event):
-        x = self.canvas.canvasx(event.x)
-        y = self.canvas.canvasy(event.y)
-        factor = 1.001 ** event.delta
-        self.canvas.scale(tk.ALL, x, y, factor, factor)
-
-    # binds for panning & zooming
-    self.canvas.bind("<MouseWheel>", do_zoom)
-    self.canvas.bind('<ButtonPress-1>', lambda event: self.canvas.scan_mark(event.x, event.y))
-    self.canvas.bind("<B1-Motion>", lambda event: self.canvas.scan_dragto(event.x, event.y, gain=1))
-
 class BiMInterface(tk.Tk):
     def __init__(self):
-
         super().__init__()
         self.title('BiM')
         # initialize bigraph generator
@@ -72,6 +57,8 @@ class BiMInterface(tk.Tk):
         # initialize tag generator
         self.uniqueTagGenerator = UniqueTagGenerator()
 
+        self.maxGraphSlots = 8
+        self.graphWidth = 300
 
         # initialize the main frame
         self.mainFrame = MainFrame(self)
@@ -87,14 +74,18 @@ class BiMInterface(tk.Tk):
     def drawGraph(self, g: Bigraph) -> None:
         # reserve space for the graph
         
-        # paint the graph x:(0-300)
-        x0 = 0 + 50
-        y0 = 0 + 50
-        x1 = 300 - 50
+        # paint the graph
+        leftColumnX = 0 + 50
+        fristRowY = 0 + 50
+        rightColumnX = self.graphWidth - 50
         
-        x = x0
-        y = y0
+        tag = self.uniqueTagGenerator.generate()
+        self.mainFrame.canvas.create_text((leftColumnX + rightColumnX)/2, fristRowY - 25, text=g.name, fill="red", tags=(tag))
+        g.nameTag = tag
+
         # draw left side vertices
+        x = leftColumnX
+        y = fristRowY
         for vertex in g.left:
             tag = self.uniqueTagGenerator.generate()
             self.mainFrame.canvas.create_oval(x - 10, y - 10, x + 10, y + 10, fill="orange", tags=(tag))
@@ -102,9 +93,9 @@ class BiMInterface(tk.Tk):
             g.vertexToTag[vertex] = tag
             y += 50
 
-        x = x1
-        y = y0
         # draw right side vertices
+        x = rightColumnX
+        y = fristRowY
         for vertex in g.right:
             tag = self.uniqueTagGenerator.generate()
             self.mainFrame.canvas.create_oval(x-10, y-10, x+10, y+10, fill="blue", tags=(tag))
@@ -119,12 +110,12 @@ class BiMInterface(tk.Tk):
         for v in list(g.edges.keys()):
             for w in g.edges[v]:
                 tag = self.uniqueTagGenerator.generate()
-                vx = self.mainFrame.canvas.coords(g.vertexToTag[v])[0] + 10 # top left corner; that's why + 10
-                vy = self.mainFrame.canvas.coords(g.vertexToTag[v])[1] + 10
-                wx = self.mainFrame.canvas.coords(g.vertexToTag[w])[0] + 10
-                wy = self.mainFrame.canvas.coords(g.vertexToTag[w])[1] + 10
-                self.mainFrame.canvas.create_line(vx, vy, wx, wy, fill="pink", tags=(tag))
+                vx, vy, _, _ = self.mainFrame.canvas.coords(g.vertexToTag[v])
+                wx, wy, _, _ = self.mainFrame.canvas.coords(g.vertexToTag[w])
+                self.mainFrame.canvas.create_line(vx+10, vy+10, wx+10, wy+10, fill="pink", tags=(tag))
                 g.edgeToTag[(v, w)] = tag
+
+        self.mainFrame.canvas.config(scrollregion=[0, 0, self.graphWidth, y])
 
     def analyze(self, g: Bigraph):
         self.drawGraph(g)

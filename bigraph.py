@@ -7,6 +7,8 @@ class Bigraph:
         self.right  = right
         self.edges  = edges
 
+        self.nameTag = None
+
         # dict[vertexId, tag]
         self.vertexToTag: dict[int, float] = {}
 
