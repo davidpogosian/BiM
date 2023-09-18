@@ -6,3 +6,9 @@ class Bigraph:
         self.left   = left
         self.right  = right
         self.edges  = edges
+
+        # dict[vertexId, tag]
+        self.vertexToTag: dict[int, int] = {}
+
+        # dict[(vertex1, vertex2), tag]
+        self.edgeToTag: dict[(int, int), int] = {}

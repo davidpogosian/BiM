@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk # not sure what I wanted ttk for
 from bigraph import Bigraph # don't like importing just for typing
+from bigraphGenerator import BigraphGenerator
+from uniqueTagGenerator import UniqueTagGenerator
 
 class Panel(tk.Frame):
     def __init__(self, tkParent):
@@ -18,7 +20,7 @@ class MainFrame(tk.Frame):
     self.panel.grid(row=0, column=0)
 
     # BUTTON
-    self.button = tk.Button(self, command=tkParent.analyze)
+    self.button = tk.Button(self, text="generate bigraph", command=tkParent.generateAndAnalyze)
     self.button.grid(row=1, column=0)
 
     # CANVAS
@@ -61,10 +63,15 @@ class MainFrame(tk.Frame):
     self.canvas.bind("<B1-Motion>", lambda event: self.canvas.scan_dragto(event.x, event.y, gain=1))
 
 class BiMInterface(tk.Tk):
-    def __init__(self, g):
+    def __init__(self):
+
         super().__init__()
         self.title('BiM')
-        self.g = g
+        # initialize bigraph generator
+        self.bigraphGenerator = BigraphGenerator()
+        # initialize tag generator
+        self.uniqueTagGenerator = UniqueTagGenerator()
+
 
         # initialize the main frame
         self.mainFrame = MainFrame(self)
@@ -77,13 +84,7 @@ class BiMInterface(tk.Tk):
         self.rowconfigure(0, weight=1)
         self.mainloop()
     
-    def clearCanvas(self):
-        self.mainFrame.canvas.delete("all")
-
-    def loadGraph(self, g):
-        pass
-    
-    def drawGraph(self):
+    def drawGraph(self, g: Bigraph):
         # reserve space for the graph
         
         # paint the graph x:(0-300)
@@ -94,23 +95,31 @@ class BiMInterface(tk.Tk):
         x = x0
         y = y0
         # print left side vertices
-        for vertex in self.g.left:
-            self.mainFrame.canvas.create_oval(x - 10, y - 10, x + 10, y + 10, fill="orange")
-            self.mainFrame.canvas.create_text(x, y, text=vertex)
+        for vertex in g.left:
+            tag = self.uniqueTagGenerator.generate()
+            self.mainFrame.canvas.create_oval(x - 10, y - 10, x + 10, y + 10, fill="orange", tags=(tag))
+            self.mainFrame.canvas.create_text(x, y, text=vertex, tags=(tag))
+            g.vertexToTag[vertex] = tag
             y += 50
 
         x = x1
         y = y0
         # print right side vertices
-        for vertex in self.g.right:
-            self.mainFrame.canvas.create_oval(x-10, y-10, x+10, y+10, fill="blue")
-            self.mainFrame.canvas.create_text(x, y, text=vertex)
+        for vertex in g.right:
+            tag = self.uniqueTagGenerator.generate()
+            self.mainFrame.canvas.create_oval(x-10, y-10, x+10, y+10, fill="blue", tags=(tag))
+            self.mainFrame.canvas.create_text(x, y, text=vertex, tags=(tag))
+            g.vertexToTag[vertex] = tag
             y += 50
 
         # print edges
 
-    def analyze(self):
-        self.drawGraph()
+    def analyze(self, g: Bigraph):
+        self.drawGraph(g)
+
+    def generateAndAnalyze(self):
+        g = self.bigraphGenerator.generateBigraph()
+        self.analyze(g)
 
 
 if __name__ == "__main__":
