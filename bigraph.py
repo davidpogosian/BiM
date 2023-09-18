@@ -8,7 +8,7 @@ class Bigraph:
         self.edges  = edges
 
         # dict[vertexId, tag]
-        self.vertexToTag: dict[int, int] = {}
+        self.vertexToTag: dict[int, float] = {}
 
         # dict[(vertex1, vertex2), tag]
-        self.edgeToTag: dict[(int, int), int] = {}
+        self.edgeToTag: dict[(int, int), float] = {}

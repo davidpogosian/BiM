@@ -84,7 +84,7 @@ class BiMInterface(tk.Tk):
         self.rowconfigure(0, weight=1)
         self.mainloop()
     
-    def drawGraph(self, g: Bigraph):
+    def drawGraph(self, g: Bigraph) -> None:
         # reserve space for the graph
         
         # paint the graph x:(0-300)
@@ -94,7 +94,7 @@ class BiMInterface(tk.Tk):
         
         x = x0
         y = y0
-        # print left side vertices
+        # draw left side vertices
         for vertex in g.left:
             tag = self.uniqueTagGenerator.generate()
             self.mainFrame.canvas.create_oval(x - 10, y - 10, x + 10, y + 10, fill="orange", tags=(tag))
@@ -104,7 +104,7 @@ class BiMInterface(tk.Tk):
 
         x = x1
         y = y0
-        # print right side vertices
+        # draw right side vertices
         for vertex in g.right:
             tag = self.uniqueTagGenerator.generate()
             self.mainFrame.canvas.create_oval(x-10, y-10, x+10, y+10, fill="blue", tags=(tag))
@@ -112,7 +112,19 @@ class BiMInterface(tk.Tk):
             g.vertexToTag[vertex] = tag
             y += 50
 
-        # print edges
+        # Curiously, running canvas.coords(tag), with multiple items having that tag, gives us only
+        # 1 set of coords, looks like the more inclusive one.
+
+        # draw edges
+        for v in list(g.edges.keys()):
+            for w in g.edges[v]:
+                tag = self.uniqueTagGenerator.generate()
+                vx = self.mainFrame.canvas.coords(g.vertexToTag[v])[0] + 10 # top left corner; that's why + 10
+                vy = self.mainFrame.canvas.coords(g.vertexToTag[v])[1] + 10
+                wx = self.mainFrame.canvas.coords(g.vertexToTag[w])[0] + 10
+                wy = self.mainFrame.canvas.coords(g.vertexToTag[w])[1] + 10
+                self.mainFrame.canvas.create_line(vx, vy, wx, wy, fill="pink", tags=(tag))
+                g.edgeToTag[(v, w)] = tag
 
     def analyze(self, g: Bigraph):
         self.drawGraph(g)
