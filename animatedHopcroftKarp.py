@@ -7,93 +7,144 @@ class AnimatedHopcroftKarp:
         self.pauseLength = pauseLength
     
     def symmetricDifference(self, g: Bigraph, augmentingPaths: list[list[int]]):
-        pass
+        for ap in augmentingPaths:
+            if g.matching[ap[0]][ap[1] - len(g.edges)] == 0:
+                g.matching[ap[0]][ap[1] - len(g.edges)] = 1
+            else:
+                g.matching[ap[0]][ap[1] - len(g.edges)] = 0
+
+	# procedure BFS(G, root) is
+    # 	let Q be a queue
+    #   label root as explored
+    #   Q.enqueue(root)
+    #   while Q is not empty do
+    #       v := Q.dequeue()
+    #       if v is the goal then
+    #           return v
+    #       for all edges from v to w in G.adjacentEdges(v) do
+    #           if w is not labeled as explored then
+    #               label w as explored
+    #               w.parent := v
+    #               Q.enqueue(w)
 
     def BFSM(self, g: Bigraph) -> dict[int, list[int]]:
-        stop = False
-        treeDictionary = {}
-        spotted = [0] * (len(g.edges) + len(g.edges[0]))
-        isVertexMatched = g.getVertexMatchLookupTable()
+        logging.debug(f'BFSM:')
         Q = []
-        for leftVertexIndex in range(len(g.edges)):
-            if isVertexMatched[leftVertexIndex] == 0:
-                Q.append(leftVertexIndex)
-        logging.debug(f'initial queue: {Q}')
+        parent = {}
+        explored = [0] * (len(g.edges) + len(g.edges[0]))
+        isVertexMatched = g.getVertexMatchLookupTable()
+        for leftVertex in range(len(g.edges)):
+            if not isVertexMatched[leftVertex]:
+                explored[leftVertex] = 1
+                Q.append(leftVertex)
+        found = False
         while len(Q) != 0:
-            currentVertex = Q.pop(0)
-            logging.debug(f'current vertex: {currentVertex}')
-            if currentVertex < len(g.edges):
+            v = Q.pop(0)
+            logging.debug(f"v: {v}")
+            if v < len(g.edges):
                 for column in range(len(g.edges[0])):
-                    if g.edges[currentVertex][column] == 1:
+                    if g.edges[v][column] == 1 and g.matching[v][column] == 0:
                         neighbor = column + len(g.edges)
                         logging.debug(f'\tneighbor: {neighbor}')
-                        if isVertexMatched[neighbor] == 0:
-                            stop = True
+                        if not isVertexMatched[neighbor] and not found:
+                            found = True
                             logging.debug(f"\t\tfound free vertex in right partition; stopping")
-                        if spotted[neighbor] == 0:
-                            logging.debug(f'\t\tnot spotted')
-                            spotted[neighbor] = 1
-                            if not stop:
+                        if not explored[neighbor]:
+                            explored[neighbor] = 1
+                            if not found:
                                 Q.append(neighbor)
                                 logging.debug(f'\t\tadded {neighbor} to Q')
-                            treeDictionary[neighbor] = [currentVertex]
+                            parent[neighbor] = [v]
                         else:
-                            treeDictionary[neighbor].append(currentVertex)
-                            logging.debug(f'\t\talready spotted')
+                            parent[neighbor].append(v)
             else:
                 for row in range(len(g.edges)):
-                    if g.edges[row][currentVertex - len(g.edges)] == 1 and g.matching[row][currentVertex - len(g.edges) == 1]:
+                    logging.debug(f'consider: {row} left <- right cond1 = {g.edges[row][v - len(g.edges)] == 1} cond2 = {g.matching[row][v - len(g.edges)] == 1}')
+                    if g.edges[row][v - len(g.edges)] == 1 and g.matching[row][v - len(g.edges)] == 1:
                         neighbor = row
                         logging.debug(f'\tneighbor: {neighbor}')
-                        if spotted[neighbor] == 0:
-                            logging.debug(f'\t\tnot spotted')
-                            spotted[neighbor] = 1
-                            if not stop:
+                        if not explored[neighbor]:
+                            explored[neighbor] = 1
+                            if not found:
                                 Q.append(neighbor)
                                 logging.debug(f'\t\tadded {neighbor} to Q')
-                            treeDictionary[neighbor] = [currentVertex]
+                            parent[neighbor] = [v]
                         else:
-                            treeDictionary[neighbor].append(currentVertex)
-                            logging.debug(f'\t\talready spotted')
-        return treeDictionary
+                            parent[neighbor].append(v)
+        return parent
+
+	# procedure DFS(G, root) is
+    # 	let S be a stack
+    #   label root as explored
+    #   S.push(root)
+    #   while S is not empty do
+    #       v := S.pop()
+    #       if v is the goal then
+    #           return v
+    #       for all edges from v to w in G.adjacentEdges(v) do
+    #           if w is not labeled as explored then
+    #               label w as explored
+    #               w.parent := v
+    #               S.push(w)
 
     def DFSM(self, g: Bigraph, BFSMForest: dict[int, list[int]]) -> list[list[int]]:
+        logging.debug(f'DFSM:')
+        augmentingPaths = []
+        unmatchedRightVertices = []
         isVertexMatched = g.getVertexMatchLookupTable()
-        freeRightVertices = []
-        for vertex in range(len(g.edges), len(g.edges) + len(g.edges[0])):
-            if isVertexMatched[vertex] == 0:
-                freeRightVertices.append(vertex)
-        for freeRightVertex in freeRightVertices:
-            spotted = [0] * (len(g.edges) + len(g.edges[0]))
-            S = [freeRightVertex]
-            path = []
-            parentof = {}
+        for rightVertex in range(len(g.edges), len(g.edges) + len(g.edges[0])):
+            if not isVertexMatched[rightVertex]:
+                unmatchedRightVertices.append(rightVertex)
+        for rightVertex in unmatchedRightVertices:
+            logging.debug(f'looking for an ap from {rightVertex}')
+            S = [rightVertex]
+            parent = {}
+            explored = [0] * (len(g.edges) + len(g.edges[0]))
+            explored[rightVertex] = 1 # doubt this is necessary
+            found = False
             while len(S) != 0:
-                currentVertex = S.pop()
-                if currentVertex < len(g.edges) and isVertexMatched[currentVertex] == 0:
-                    logging.debug('found path!')
+                v = S.pop()
+                logging.debug(f'v: {v}')
+                if v in parent:
+                    BFSMForest[parent[v]].remove(v)
+                    logging.debug(f'removed {parent[v]} -> {v}')
+                if v < len(g.edges) and not isVertexMatched[v]:
+                    found = True
+                    isVertexMatched[v] = 1
+                    while v in parent:
+                        logging.debug(f'{v} => {parent[v]}')
+                        ap = [v, parent[v]] if parent[v] > v  else [parent[v], v]
+                        augmentingPaths.append(ap)
+                        v = parent[v]
                     break
-                if not currentVertex in BFSMForest:
-                    continue
-                for neighbor in BFSMForest[currentVertex]:
-                    if spotted[neighbor] == 0:
-                        spotted[neighbor] = 1
-                        S.append(neighbor)
-                    parentof[neighbor] = currentVertex
-
+                if v in BFSMForest:
+                    for w in BFSMForest[v]:
+                        if not explored[w]:
+                            explored[w] = 1
+                            parent[w] = v
+                            S.append(w)
+        return augmentingPaths
 
     def findAugPaths(self, g: Bigraph):
         BFSMForest = self.BFSM(g)
-        print(BFSMForest)
-        self.DFSM(g, BFSMForest)
+        logging.debug(f'BFSMForest: {BFSMForest}')
+        augmentingPaths = self.DFSM(g, BFSMForest)
+        logging.debug(f'augmentingPaths: {augmentingPaths}')
+        return augmentingPaths
 
     def hopcroftKarp(self, g: Bigraph):
-        self.findAugPaths(g)
+        augmentingPaths = self.findAugPaths(g)
+        while len(augmentingPaths) != 0:
+            logging.debug('running symmetric difference!')
+            self.symmetricDifference(g, augmentingPaths)
+            augmentingPaths = self.findAugPaths(g)
+        logging.debug(f'maximum matching:')
+        for row in range(len(g.matching)):
+            for column in range(len(g.matching[0])):
+                if g.matching[row][column]:
+                    logging.debug(f'{row} => {column + len(g.edges)}')
     
 
 if __name__ == "__main__":
     logging.basicConfig(encoding='utf-8', level=logging.DEBUG, format="%(message)s")
-    print(AnimatedHopcroftKarp().hopcroftKarp(BigraphGenerator().generateBigraph()))
-
-
-
+    AnimatedHopcroftKarp().hopcroftKarp(BigraphGenerator().generateBigraph())
