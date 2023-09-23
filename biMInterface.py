@@ -1,8 +1,10 @@
-import tkinter as tk
 from tkinter import ttk # not sure what I wanted ttk for
 from bigraph import Bigraph # don't like importing just for typing
 from bigraphGenerator import BigraphGenerator
 from uniqueTagGenerator import UniqueTagGenerator
+from animatedHopcroftKarp import AnimatedHopcroftKarp
+import tkinter as tk
+import logging
 
 class Panel(tk.Frame):
     def __init__(self, tkParent):
@@ -38,8 +40,8 @@ class MainFrame(tk.Frame):
 
 
     # TEMP
-    self["bg"] = "black"
-    self.canvas.create_oval(-10, -10, 10, 10, fill="green")
+    #self["bg"] = "black"
+    #self.canvas.create_oval(-10, -10, 10, 10, fill="green")
 
     # smallest scrollable region that contains everything on the canvas
     #self.canvas.configure(scrollregion = self.canvas.bbox("all"))
@@ -52,10 +54,9 @@ class BiMInterface(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title('BiM')
-        # initialize bigraph generator
         self.bigraphGenerator = BigraphGenerator()
-        # initialize tag generator
         self.uniqueTagGenerator = UniqueTagGenerator()
+        self.animtedHopcroftKarp = AnimatedHopcroftKarp()
 
         self.maxGraphSlots = 8
         self.graphWidth = 300
@@ -86,7 +87,7 @@ class BiMInterface(tk.Tk):
         # draw left side vertices
         x = leftColumnX
         y = fristRowY
-        for vertex in g.left:
+        for vertex in range(len(g.edges)):
             tag = self.uniqueTagGenerator.generate()
             self.mainFrame.canvas.create_oval(x - 10, y - 10, x + 10, y + 10, fill="orange", tags=(tag))
             self.mainFrame.canvas.create_text(x, y, text=vertex, tags=(tag))
@@ -96,7 +97,7 @@ class BiMInterface(tk.Tk):
         # draw right side vertices
         x = rightColumnX
         y = fristRowY
-        for vertex in g.right:
+        for vertex in range(len(g.edges), len(g.edges) + len(g.edges[0])):
             tag = self.uniqueTagGenerator.generate()
             self.mainFrame.canvas.create_oval(x-10, y-10, x+10, y+10, fill="blue", tags=(tag))
             self.mainFrame.canvas.create_text(x, y, text=vertex, tags=(tag))
@@ -107,18 +108,28 @@ class BiMInterface(tk.Tk):
         # 1 set of coords, looks like the more inclusive one.
 
         # draw edges
-        for v in list(g.edges.keys()):
-            for w in g.edges[v]:
-                tag = self.uniqueTagGenerator.generate()
-                vx, vy, _, _ = self.mainFrame.canvas.coords(g.vertexToTag[v])
-                wx, wy, _, _ = self.mainFrame.canvas.coords(g.vertexToTag[w])
-                self.mainFrame.canvas.create_line(vx+10, vy+10, wx+10, wy+10, fill="pink", tags=(tag))
-                g.edgeToTag[(v, w)] = tag
+        for v in range(len(g.edges)):
+            for w in range(len(g.edges), len(g.edges) + len(g.edges[0])):
+                if g.edges[v][w - len(g.edges)] == 1:
+                    tag = self.uniqueTagGenerator.generate()
+                    vx, vy, _, _ = self.mainFrame.canvas.coords(g.vertexToTag[v])
+                    wx, wy, _, _ = self.mainFrame.canvas.coords(g.vertexToTag[w])
+                    self.mainFrame.canvas.create_line(vx+10, vy+10, wx+10, wy+10, fill="pink", tags=(tag))
+                    g.edgeToTag[(v, w)] = tag
 
         self.mainFrame.canvas.config(scrollregion=[0, 0, self.graphWidth, y])
 
     def analyze(self, g: Bigraph):
         self.drawGraph(g)
+        logging.debug("graph drawn")
+        self.animtedHopcroftKarp.hopcroftKarp(g)
+
+        # find a maximum matching using hk
+        # find all other possible maximum matchings
+        # pay attention to the relationship of edges in a mmatching
+        # may be base it off of my subgraph approach =>
+        # identify what type of component it is (intersection or path)
+        # and then find out what decision was made and see if there are decipherable rules
 
     def generateAndAnalyze(self):
         g = self.bigraphGenerator.generateBigraph()
@@ -126,4 +137,5 @@ class BiMInterface(tk.Tk):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(encoding='utf-8', level=logging.DEBUG, format="%(message)s")
     BiMInterface()
