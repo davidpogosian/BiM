@@ -1,10 +1,18 @@
 from bigraph import Bigraph # for typing
 from bigraphGenerator import BigraphGenerator # for debugging
+import time
 import logging
 
 class AnimatedHopcroftKarp:
-    def __init__(self, pauseLength=0):
-        self.pauseLength = pauseLength
+    def __init__(self, pauseDuration=0):
+        self.pauseDuration = pauseDuration
+    
+    def setCanvas(self, canvas):
+        self.canvas = canvas
+
+    def changePauseDuration(self, newDuration):
+        self.pauseDuration = float(newDuration)
+        logging.debug(f'pauseDuraton: {self.pauseDuration}')
     
     def symmetricDifference(self, g: Bigraph, augmentingPaths: list[list[int]]):
         for ap in augmentingPaths:
@@ -41,6 +49,8 @@ class AnimatedHopcroftKarp:
         while len(Q) != 0:
             v = Q.pop(0)
             logging.debug(f"v: {v}")
+            # self.canvas.after(1000, self.canvas.itemconfig(g.vertexToTag[v], fill="green"))
+            # time.sleep(self.pauseDuration)
             if v < len(g.edges):
                 for column in range(len(g.edges[0])):
                     if g.edges[v][column] == 1 and g.matching[v][column] == 0:

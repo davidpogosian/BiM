@@ -3,6 +3,7 @@ from bigraph import Bigraph # don't like importing just for typing
 from bigraphGenerator import BigraphGenerator
 from uniqueTagGenerator import UniqueTagGenerator
 from animatedHopcroftKarp import AnimatedHopcroftKarp
+from subgraphIntersection import SubgraphIntersection
 import tkinter as tk
 import logging
 
@@ -38,6 +39,9 @@ class MainFrame(tk.Frame):
     # hook up scrollbars to canvas
     self.canvas.config(xscrollcommand=self.horizontalScrollbar.set, yscrollcommand=self.verticalScrollbar.set)
 
+    pauseDuration = 0
+    self.slider = ttk.Scale(self, orient="horizontal", length=100, from_=0, to=1, variable=pauseDuration, command=tkParent.animatedHopcroftKarp.changePauseDuration)
+    self.slider.grid(row=2, column = 0)
 
     # TEMP
     #self["bg"] = "black"
@@ -56,7 +60,8 @@ class BiMInterface(tk.Tk):
         self.title('BiM')
         self.bigraphGenerator = BigraphGenerator()
         self.uniqueTagGenerator = UniqueTagGenerator()
-        self.animtedHopcroftKarp = AnimatedHopcroftKarp()
+        self.animatedHopcroftKarp = AnimatedHopcroftKarp()
+        self.subgraphIntersection = SubgraphIntersection()
 
         self.maxGraphSlots = 8
         self.graphWidth = 300
@@ -66,6 +71,7 @@ class BiMInterface(tk.Tk):
         # need sticky to expand main frame
         self.mainFrame.grid(row=0, column=0, sticky=("N","E","S","W"))
 
+        self.animatedHopcroftKarp.setCanvas(self.mainFrame.canvas)
 
         # need weight to expand main frame
         self.columnconfigure(0, weight=1)
@@ -114,22 +120,36 @@ class BiMInterface(tk.Tk):
                     tag = self.uniqueTagGenerator.generate()
                     vx, vy, _, _ = self.mainFrame.canvas.coords(g.vertexToTag[v])
                     wx, wy, _, _ = self.mainFrame.canvas.coords(g.vertexToTag[w])
-                    self.mainFrame.canvas.create_line(vx+10, vy+10, wx+10, wy+10, fill="pink", tags=(tag))
+                    self.mainFrame.canvas.create_line(vx+10, vy+10, wx+10, wy+10, fill="white", width=2, tags=(tag))
                     g.edgeToTag[(v, w)] = tag
 
         self.mainFrame.canvas.config(scrollregion=[0, 0, self.graphWidth, y])
 
     def analyze(self, g: Bigraph):
         self.drawGraph(g)
-        logging.debug("graph drawn")
-        self.animtedHopcroftKarp.hopcroftKarp(g)
+        logging.debug("GRAPH DRAWN")
+        self.animatedHopcroftKarp.hopcroftKarp(g)
+        for row in range(len(g.matching)):
+            for column in range(len(g.matching[0])):
+                if g.matching[row][column] == 1:
+                    self.mainFrame.canvas.itemconfig(g.edgeToTag[(row, column + len(g.edges))], fill="green")
 
+        # idea 3
         # find a maximum matching using hk
         # find all other possible maximum matchings
         # pay attention to the relationship of edges in a mmatching
         # may be base it off of my subgraph approach =>
         # identify what type of component it is (intersection or path)
         # and then find out what decision was made and see if there are decipherable rules
+
+        # idea 2
+        # Come up with a partially correct algorithm. Then run it and hk through a group graphs.
+        # When results don't match try to adjust the rules for the algorithm to make it work.
+        # Repeat until algo works on every graph.
+
+        # idea 3
+        # Come up with partially correct algorithm. Once it gets it's matching, use a.p.s to
+        # push it to a maximum matching. Then figure out new rules?
 
     def generateAndAnalyze(self):
         g = self.bigraphGenerator.generateBigraph()
