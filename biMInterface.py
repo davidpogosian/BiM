@@ -4,6 +4,7 @@ from bigraphGenerator import BigraphGenerator
 from uniqueTagGenerator import UniqueTagGenerator
 from animatedHopcroftKarp import AnimatedHopcroftKarp
 from subgraphIntersection import SubgraphIntersection
+from singlePath import SinglePath
 import tkinter as tk
 import logging
 
@@ -62,6 +63,7 @@ class BiMInterface(tk.Tk):
         self.uniqueTagGenerator = UniqueTagGenerator()
         self.animatedHopcroftKarp = AnimatedHopcroftKarp()
         self.subgraphIntersection = SubgraphIntersection()
+        self.singlePath = SinglePath()
 
         self.maxGraphSlots = 8
         self.graphWidth = 300
@@ -134,7 +136,7 @@ class BiMInterface(tk.Tk):
                 if g.matching[row][column] == 1:
                     self.mainFrame.canvas.itemconfig(g.edgeToTag[(row, column + len(g.edges))], fill="green")
 
-        # idea 3
+        # idea 1
         # find a maximum matching using hk
         # find all other possible maximum matchings
         # pay attention to the relationship of edges in a mmatching
@@ -149,7 +151,8 @@ class BiMInterface(tk.Tk):
 
         # idea 3
         # Come up with partially correct algorithm. Once it gets it's matching, use a.p.s to
-        # push it to a maximum matching. Then figure out new rules?
+        # push it to a maximum matching. Then figure out new rules? The challenge is handling
+        # bundles of intersections
 
     def generateAndAnalyze(self):
         g = self.bigraphGenerator.generateBigraph()
