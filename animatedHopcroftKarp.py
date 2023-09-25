@@ -156,5 +156,5 @@ class AnimatedHopcroftKarp:
     
 
 if __name__ == "__main__":
-    logging.basicConfig(encoding='utf-8', level=logging.DEBUG, format="%(message)s")
+    #logging.basicConfig(encoding='utf-8', level=logging.DEBUG, format="%(message)s")
     AnimatedHopcroftKarp().hopcroftKarp(BigraphGenerator().generateBigraph())

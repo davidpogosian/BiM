@@ -28,3 +28,15 @@ class Bigraph:
                     if row[vertex - len(self.edges)] == 1:
                         lookupTable[vertex] = 1
         return lookupTable
+    
+    def matchingCardinality(self):
+        cardinality = 0
+        for row in self.matching:
+            rowContainsEdge = False
+            for entry in row:
+                if entry == 1:
+                    if rowContainsEdge:
+                        print(f'INVALID MATCHING!!!')
+                    cardinality += 1
+                    rowContainsEdge = True
+        return cardinality

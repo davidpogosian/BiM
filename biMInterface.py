@@ -5,6 +5,7 @@ from uniqueTagGenerator import UniqueTagGenerator
 from animatedHopcroftKarp import AnimatedHopcroftKarp
 from subgraphIntersection import SubgraphIntersection
 from singlePath import SinglePath
+import copy
 import tkinter as tk
 import logging
 
@@ -27,6 +28,9 @@ class MainFrame(tk.Frame):
     self.button = tk.Button(self, text="generate bigraph", command=tkParent.generateAndAnalyze)
     self.button.grid(row=1, column=0)
 
+    self.button = tk.Button(self, text='erase graph', command=tkParent.eraseGraph)
+    self.button.grid(row=2, column=0)
+
     # CANVAS
     self.canvas = tk.Canvas(self, width=300, height=300, background="black")
     self.canvas.grid(row=0, column=1, sticky=("N","E","S","W"))
@@ -42,7 +46,7 @@ class MainFrame(tk.Frame):
 
     pauseDuration = 0
     self.slider = ttk.Scale(self, orient="horizontal", length=100, from_=0, to=1, variable=pauseDuration, command=tkParent.animatedHopcroftKarp.changePauseDuration)
-    self.slider.grid(row=2, column = 0)
+    self.slider.grid(row=3, column = 0)
 
     # TEMP
     #self["bg"] = "black"
@@ -68,6 +72,9 @@ class BiMInterface(tk.Tk):
         self.maxGraphSlots = 8
         self.graphWidth = 300
 
+        # TEMP
+        self.graph = None
+
         # initialize the main frame
         self.mainFrame = MainFrame(self)
         # need sticky to expand main frame
@@ -79,6 +86,12 @@ class BiMInterface(tk.Tk):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.mainloop()
+
+    def eraseGraph(self):
+        for v in self.graph.vertexToTag:
+            self.mainFrame.canvas.delete(self.graph.vertexToTag[v])
+        for e in self.graph.edgeToTag:
+            self.mainFrame.canvas.delete(self.graph.edgeToTag[e])
     
     def drawGraph(self, g: Bigraph) -> None:
         # reserve space for the graph
@@ -130,11 +143,30 @@ class BiMInterface(tk.Tk):
     def analyze(self, g: Bigraph):
         self.drawGraph(g)
         logging.debug("GRAPH DRAWN")
-        self.animatedHopcroftKarp.hopcroftKarp(g)
-        for row in range(len(g.matching)):
-            for column in range(len(g.matching[0])):
-                if g.matching[row][column] == 1:
-                    self.mainFrame.canvas.itemconfig(g.edgeToTag[(row, column + len(g.edges))], fill="green")
+        gCopy1 = copy.deepcopy(g)
+        gCopy2 = copy.deepcopy(g)
+        self.animatedHopcroftKarp.hopcroftKarp(gCopy1)
+        self.singlePath.computeMatching(gCopy2)
+
+        print(f'hk: {gCopy1.matchingCardinality()} sp: {gCopy2.matchingCardinality()}')
+        if gCopy1.matchingCardinality() != gCopy2.matchingCardinality():
+            print(f'DONT MATCH')
+            print(f'problem graph:')
+            for row in g.edges:
+                print(row)
+            print(f'hk matching:')
+            for row in gCopy1.matching:
+                print(row)
+            print(f'sp matching:')
+            for row in gCopy2.matching:
+                print(row)
+        else:
+            print(f'MATCH')
+
+        # for row in range(len(g.matching)):
+        #     for column in range(len(g.matching[0])):
+        #         if g.matching[row][column] == 1:
+        #             self.mainFrame.canvas.itemconfig(g.edgeToTag[(row, column + len(g.edges))], fill="green")
 
         # idea 1
         # find a maximum matching using hk
@@ -156,9 +188,10 @@ class BiMInterface(tk.Tk):
 
     def generateAndAnalyze(self):
         g = self.bigraphGenerator.generateBigraph()
+        self.graph = g
         self.analyze(g)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(encoding='utf-8', level=logging.DEBUG, format="%(message)s")
+    logging.basicConfig(encoding='utf-8', level=logging.WARNING, format="%(message)s")
     BiMInterface()
